@@ -146,4 +146,8 @@ dmypy.json
 .mypy_cache
 
 # папки со статикой и медиа
-media/
+media/venv/
+__pycache__/
+*.pyc
+db.sqlite3
+.DS_Store
