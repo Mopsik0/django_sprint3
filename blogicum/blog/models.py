@@ -1,11 +1,27 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
+MAX_TITLE_LENGTH = 256
+
 User = get_user_model()
 
 
-class Category(models.Model):
-    title = models.CharField('Заголовок', max_length=256)
+class BasePublishedStampedModel(models.Model):
+    """Абстрактная модель с флагом публикации и датой создания."""
+
+    is_published = models.BooleanField(
+        'Опубликовано',
+        default=True,
+        help_text='Снимите галочку, чтобы скрыть публикацию.',
+    )
+    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+
+class Category(BasePublishedStampedModel):
+    title = models.CharField('Заголовок', max_length=MAX_TITLE_LENGTH)
     description = models.TextField('Описание')
     slug = models.SlugField(
         'Идентификатор',
@@ -15,36 +31,28 @@ class Category(models.Model):
             'разрешены символы латиницы, цифры, дефис и подчёркивание.'
         ),
     )
-    is_published = models.BooleanField(
-        'Опубликовано',
-        default=True,
-        help_text='Снимите галочку, чтобы скрыть публикацию.',
-    )
-    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
 
     class Meta:
         verbose_name = 'категория'
         verbose_name_plural = 'Категории'
 
-    def __str__(self):
-        return self.title
+    def __str__(self) -> str:
+        return self.title[:50]
 
 
-class Location(models.Model):
-    name = models.CharField('Название места', max_length=256)
-    is_published = models.BooleanField('Опубликовано', default=True)
-    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
+class Location(BasePublishedStampedModel):
+    name = models.CharField('Название места', max_length=MAX_TITLE_LENGTH)
 
     class Meta:
         verbose_name = 'местоположение'
         verbose_name_plural = 'Местоположения'
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return self.name[:50]
 
 
-class Post(models.Model):
-    title = models.CharField('Заголовок', max_length=256)
+class Post(BasePublishedStampedModel):
+    title = models.CharField('Заголовок', max_length=MAX_TITLE_LENGTH)
     text = models.TextField('Текст')
     pub_date = models.DateTimeField(
         'Дата и время публикации',
@@ -57,7 +65,6 @@ class Post(models.Model):
         User,
         verbose_name='Автор публикации',
         on_delete=models.CASCADE,
-        related_name='posts',
     )
     location = models.ForeignKey(
         Location,
@@ -65,21 +72,18 @@ class Post(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='posts',
     )
     category = models.ForeignKey(
         Category,
         verbose_name='Категория',
         on_delete=models.SET_NULL,
         null=True,
-        related_name='posts',
     )
-    is_published = models.BooleanField('Опубликовано', default=True)
-    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
 
     class Meta:
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
+        default_related_name = 'posts'
 
-    def __str__(self):
-        return self.title
+    def __str__(self) -> str:
+        return self.title[:50]
