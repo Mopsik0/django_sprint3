@@ -6,8 +6,8 @@ MAX_TITLE_LENGTH = 256
 User = get_user_model()
 
 
-class BasePublishedStampedModel(models.Model):
-    """Абстрактная модель с флагом публикации и датой создания."""
+class PublishedBase(models.Model):
+    """Абстрактная модель с общими полями публикации."""
 
     is_published = models.BooleanField(
         'Опубликовано',
@@ -20,7 +20,7 @@ class BasePublishedStampedModel(models.Model):
         abstract = True
 
 
-class Category(BasePublishedStampedModel):
+class Category(PublishedBase):
     title = models.CharField('Заголовок', max_length=MAX_TITLE_LENGTH)
     description = models.TextField('Описание')
     slug = models.SlugField(
@@ -40,7 +40,7 @@ class Category(BasePublishedStampedModel):
         return self.title[:50]
 
 
-class Location(BasePublishedStampedModel):
+class Location(PublishedBase):
     name = models.CharField('Название места', max_length=MAX_TITLE_LENGTH)
 
     class Meta:
@@ -51,7 +51,7 @@ class Location(BasePublishedStampedModel):
         return self.name[:50]
 
 
-class Post(BasePublishedStampedModel):
+class Post(PublishedBase):
     title = models.CharField('Заголовок', max_length=MAX_TITLE_LENGTH)
     text = models.TextField('Текст')
     pub_date = models.DateTimeField(
@@ -84,6 +84,7 @@ class Post(BasePublishedStampedModel):
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
         default_related_name = 'posts'
+        ordering = ('-pub_date',)
 
     def __str__(self) -> str:
         return self.title[:50]

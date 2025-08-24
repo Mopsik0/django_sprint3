@@ -7,13 +7,10 @@ POSTS_ON_INDEX = 5
 
 
 def _base_posts_qs():
-    """Базовый queryset опубликованных постов с нужными связями/фильтрами."""
+    """Базовый queryset опубликованных постов с нужными связями и фильтрами."""
     return (
-        Post.objects.select_related(
-            'author',
-            'category',
-            'location',
-        ).filter(
+        Post.objects.select_related('author', 'category', 'location')
+        .filter(
             is_published=True,
             pub_date__lte=timezone.now(),
             category__is_published=True,
@@ -23,12 +20,8 @@ def _base_posts_qs():
 
 def index(request):
     """Главная страница: последние 5 опубликованных постов."""
-    qs = _base_posts_qs()[:POSTS_ON_INDEX]
-    return render(
-        request,
-        'blog/index.html',
-        {'post_list': qs},
-    )
+    post_list = _base_posts_qs()[:POSTS_ON_INDEX]
+    return render(request, 'blog/index.html', {'post_list': post_list})
 
 
 def category_posts(request, slug):
@@ -38,21 +31,12 @@ def category_posts(request, slug):
     Показываем посты только если сама категория опубликована.
     Иначе возвращаем 404.
     """
-    category = get_object_or_404(
-        Category,
-        slug=slug,
-        is_published=True,
-    )
-    qs = _base_posts_qs().filter(
-        category=category,
-    )
+    category = get_object_or_404(Category, slug=slug, is_published=True)
+    post_list = _base_posts_qs().filter(category=category)
     return render(
         request,
         'blog/category.html',
-        {
-            'category': category,
-            'post_list': qs,
-        },
+        {'category': category, 'post_list': post_list},
     )
 
 
@@ -63,12 +47,5 @@ def post_detail(request, pk):
     404, если пост снят с публикации, дата в будущем
     или категория снята с публикации.
     """
-    post = get_object_or_404(
-        _base_posts_qs(),
-        pk=pk,
-    )
-    return render(
-        request,
-        'blog/detail.html',
-        {'post': post},
-    )
+    post = get_object_or_404(_base_posts_qs(), pk=pk)
+    return render(request, 'blog/detail.html', {'post': post})
