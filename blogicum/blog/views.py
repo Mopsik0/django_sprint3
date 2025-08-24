@@ -6,18 +6,29 @@ from .models import Category, Post
 POSTS_ON_INDEX = 5
 
 
-def index(request):
-    """Главная страница: последние 5 опубликованных постов."""
-    qs = (
-        Post.objects.select_related('author', 'category', 'location')
-        .filter(
+def _base_posts_qs():
+    """Базовый queryset опубликованных постов с нужными связями/фильтрами."""
+    return (
+        Post.objects.select_related(
+            'author',
+            'category',
+            'location',
+        ).filter(
             is_published=True,
             pub_date__lte=timezone.now(),
             category__is_published=True,
         )
-        .order_by('-pub_date')[:POSTS_ON_INDEX]
     )
-    return render(request, 'blog/index.html', {'post_list': qs})
+
+
+def index(request):
+    """Главная страница: последние 5 опубликованных постов."""
+    qs = _base_posts_qs()[:POSTS_ON_INDEX]
+    return render(
+        request,
+        'blog/index.html',
+        {'post_list': qs},
+    )
 
 
 def category_posts(request, slug):
@@ -27,20 +38,21 @@ def category_posts(request, slug):
     Показываем посты только если сама категория опубликована.
     Иначе возвращаем 404.
     """
-    category = get_object_or_404(Category, slug=slug, is_published=True)
-    qs = (
-        Post.objects.select_related('author', 'category', 'location')
-        .filter(
-            category=category,
-            is_published=True,
-            pub_date__lte=timezone.now(),
-        )
-        .order_by('-pub_date')
+    category = get_object_or_404(
+        Category,
+        slug=slug,
+        is_published=True,
+    )
+    qs = _base_posts_qs().filter(
+        category=category,
     )
     return render(
         request,
         'blog/category.html',
-        {'category': category, 'post_list': qs},
+        {
+            'category': category,
+            'post_list': qs,
+        },
     )
 
 
@@ -52,10 +64,11 @@ def post_detail(request, pk):
     или категория снята с публикации.
     """
     post = get_object_or_404(
-        Post.objects.select_related('author', 'category', 'location'),
+        _base_posts_qs(),
         pk=pk,
-        is_published=True,
-        pub_date__lte=timezone.now(),
-        category__is_published=True,
     )
-    return render(request, 'blog/detail.html', {'post': post})
+    return render(
+        request,
+        'blog/detail.html',
+        {'post': post},
+    )
